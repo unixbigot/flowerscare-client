@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "noble": "^1.9.1"
+    "@abandonware/noble": "^1.9.2-5",
+    "log4js": "^6.1.0"
   }
 }
