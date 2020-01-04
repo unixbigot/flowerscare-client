@@ -28,7 +28,9 @@ if (argv._.length>0) {
 logger.debug('Set search to ',search)
 
 function finish() {
-    console.log(JSON.stringify(result,null,'    '))
+    if (!argv.list) {
+	console.log(JSON.stringify(result,null,'    '))
+    }
     process.exit(0);
 }
 
