@@ -155,12 +155,11 @@ function pollDevice(device) {
 			    logger.info(`data value "${characteristic.name}": ${value}`)
 			    if (argv.dump) console.log(`value ${characteristic.name}`, value)
 
-			    /*
-			    if (characteristic.name === 'led pin') {
-				value = value+1
+			    if (characteristic.name === 'LED') {
+				value = !value
 				const buf = Buffer.alloc(2)
 				buf.writeUInt16LE(value, 0)
-				logger.info(`Incrementing count to ${value}`, buf)
+				logger.info(`Inverting LED to ${value}`, buf)
 				characteristic.write(buf, false, err=>{
 				    if (err) {
 					logger.error('Write error', err)
@@ -170,7 +169,6 @@ function pollDevice(device) {
 				    }
 				});
 			    }
-			    */
 
 			    if (argv.expect && (Object.keys(result).length >= argv.expect)) {
 				finish()
