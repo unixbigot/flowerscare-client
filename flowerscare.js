@@ -3,10 +3,15 @@
 const noble = require('@abandonware/noble');
 const log4js = require('log4js');
 const logger = log4js.getLogger();
+let devices = ['Flowerscare'];
 
-//logger.level = 'warn';
+logger.level = 'info';
 const expect = 4;
 const result = {};
+
+if (process.argv.length>2) {
+    devices = process.argv.slice(2)
+}
 
 const nobleDump = (msg,obj,func=logger.debug) => func.call(logger, msg, JSON.stringify(obj,(k,v)=>(k==='_noble'?undefined:v),'   '))
 
@@ -21,8 +26,9 @@ noble.on('stateChange', state=>{
 
 noble.on('discover', device=>{
     logger.info(`Discovered ${device.address} ${device.uuid} ${device.advertisement.localName||''}`)
-    nobleDump('Device', device)
-    if (device.advertisement.localName === 'Flowerscare') {
+    //nobleDump('Device', device.advertisement, logger.info)
+    nobleDump('Device', device, logger.info)
+    if (devices.find(d=>d===device.advertisement.localName || d===device.advertisement.uuid)) {
 	noble.stopScanning()
 	pollFlowerscare(device)
     }
@@ -44,7 +50,7 @@ noble.on('warning', message=>{
 function pollFlowerscare(device) {
     nobleDump('Polling flowerscare device',device,logger.info)
     device.once('connect', ()=>{
-	logger.debug('Flowerscare connected');
+	logger.info('Flowerscare connected');
 	device.once('disconnect', ()=>{
 	    logger.info('Flowerscare disconnected');
 	})
