@@ -8,18 +8,20 @@ const logger = log4js.getLogger();
 const util = require('util');
 let search = ['Flowerscare'];
 
-//logger.level = 'info';
 const result = {};
 
 const argv = yargs
       .option('list',{type:'boolean'})
       .option('dump',{type:'boolean'})
       .option('timeout',{type:'number', default:10})
+      .option('loglevel',{type:'string', default:''})
       .option('expect',{type:'number', default:0})
       .option('notify',{type:'string', array:true, default:[]})
       .help()
       .alias('help', 'h')
       .argv;
+
+if (argv.loglevel) logger.level = argv.loglevel
 
 logger.debug('Args parsed as ',argv)
 if (argv._.length>0) {
@@ -52,7 +54,7 @@ noble.on('stateChange', state=>{
 })
 
 noble.on('discover', device=>{
-    const banner = `${device.address} ${device.uuid} ${device.advertisement.localName||''}`
+    const banner = `${device.address} ${device.uuid} ${device.rssi}dB ${device.advertisement.localName||''}`
     if (argv.list) {
 	console.log(banner)
     } else {
@@ -61,7 +63,7 @@ noble.on('discover', device=>{
     if (search.find(d=>d===device.advertisement.localName || d===device.advertisement.uuid)) {
 	if (argv.dump)
 	    nobleDump('device', device, console.log, console)
-	else
+	else 
 	    nobleDump('device', device, logger.debug)
 	if (!argv.list) {
 	    noble.stopScanning()
