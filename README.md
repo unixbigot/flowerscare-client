@@ -7,6 +7,10 @@ Crowley from Gaiman & Pratchett's "Good Omens".   Crowley's approach
 to encouraging healthy houseplants is Terror: he executes poor
 performers and shouts threat at his plants.
 
+This program was written to read information from my 
+[Flowerscare](https://github.com/unixbigot/flowerscare) sensor 
+but will also work for any Bluetooth low energy device.
+
 ## Bluetooth in NodeJS
 
 There's a Bluetooth low energy (BLE) library for node called Noble.
@@ -19,7 +23,7 @@ aggressively caches device characteristics, so if you are seeing odd
 results, reboot your mac).   
 
 On linux you need to run as root, OR give nodejs permission to create
-bluetooth sockets: `sudo setcap cap_net_raw+eip /usr/local/bin/node`.
+bluetooth sockets by running: `sudo setcap cap_net_raw+eip /usr/local/bin/node`.
 
 ## Installation
 
