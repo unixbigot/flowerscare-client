@@ -21,6 +21,11 @@ results, reboot your mac).
 On linux you need to run as root, OR give nodejs permission to create
 bluetooth sockets: `sudo setcap cap_net_raw+eip /usr/local/bin/node`.
 
+## Installation
+
+* Install NodeJS following instructions from https://nodejs.org/
+* Download this repository, cd into it, then run `npm install`
+
 ## Using this program
 
 * **List devices**
