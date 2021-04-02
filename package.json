@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@abandonware/noble": "^1.9.2-5",
+    "@abandonware/noble": "^1.9.2-12",
     "async": "^3.1.0",
     "log4js": "^6.1.0",
     "yargs": "^15.1.0"
