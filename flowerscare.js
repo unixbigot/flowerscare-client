@@ -10,9 +10,15 @@ let search = ['Flowerscare'];
 
 const result = {};
 
+const uuid_serial_rx = '6e400002b5a3f393e0a9e50e24dcca9e';
+const uuid_serial_tx = '6e400003b5a3f393e0a9e50e24dcca9e';
+let   chrc_serial_rx=null;
+let   chrc_serial_tx=null;
+                        
 const argv = yargs
       .option('list',{type:'boolean'})
       .option('dump',{type:'boolean'})
+      .option('serial',{type:'boolean'})
       .option('timeout',{type:'number', default:10})
       .option('loglevel',{type:'string', default:''})
       .option('expect',{type:'number', default:0})
@@ -91,7 +97,7 @@ function pollDevice(device) {
 
     device.once('connect', ()=>{
 
-	logger.info('Device connected');
+	logger.debug('Device connected');
 
 	device.once('disconnect', ()=>{
 	    logger.info('Device disconnected');
@@ -103,7 +109,7 @@ function pollDevice(device) {
 		    console.error('Service discovery failed', error)
 		    return
 		}
-		logger.info('Service discovery complete')
+		logger.debug('Service discovery complete')
 		if (argv.dump) services.forEach(s=>nobleDump('service', s, console.log, console))
 		nobleDump(`Discovered ${services.length} services`, services, logger.debug)
 		logger.debug(`Discovered ${characteristics.length} characteristics`)
@@ -132,19 +138,33 @@ function pollDevice(device) {
 					return
 				    }
 				    const name = data.toString('utf8')
-				    logger.info(`Characteristic ${characteristic.uuid} aka ${name}`)
+				    logger.debug(`Characteristic ${characteristic.uuid} aka ${name}`)
 				    characteristic.name = name
 				})
 			    }
 			})
 
 			logger.debug(`listen for data`)
-			characteristic.on('data',data=>{
+			characteristic.on('data',(data,isNotification)=>{
 			    let value
-			    logger.debug(`data callback for ${characteristic.name}`)
-			    if (characteristic.name.endsWith(' Name') ||
+			    logger.debug(`${isNotification?'notification':'read'} callback for ${characteristic.name}`)
+			    if (characteristic.uuid === uuid_serial_tx) {
+				logger.info('serial data on tx',data.toString('utf8'))
+				//process.stdout.write(data.toString('utf8'));
+				console.log(data.toString('utf8'));
+				return;
+			    }
+			    if (characteristic.uuid === uuid_serial_rx) {
+				logger.info('serial data on rx',data.toString('utf8'))
+				//process.stdout.write(data.toString('utf8'));
+				return;
+			    }
+			    else if (characteristic.name.includes('Name') ||
 				characteristic.name.endsWith(' String')) {
 				value = data.toString('utf8')
+			    }
+			    else if (data.length == 1) {
+				value = data.readUInt8()
 			    }
 			    else if (data.length == 2) {
 				value = data.readUInt16LE()
@@ -156,7 +176,7 @@ function pollDevice(device) {
 				value = util.inspect(data)
 			    }
 			    result[characteristic.name]=value
-			    logger.info(`data value "${characteristic.name}": ${value}`)
+			    logger.info(`"${characteristic.name}" = ${value}`)
 			    if (argv.dump) console.log(`value ${characteristic.name}`, value)
 
 			    if (characteristic.name === 'LED') {
@@ -185,7 +205,7 @@ function pollDevice(device) {
 			})
 
 			if (characteristic.properties.includes('read')) {
-			    logger.info(`read characteristic ${characteristic.name}`)
+			    logger.debug(`read characteristic ${characteristic.name}`)
 			    characteristic.read((error,data)=>{
 				if (error) {
 				    logger.error(`Characteristic ${characteristic.name} read failed`, error)
@@ -198,7 +218,35 @@ function pollDevice(device) {
 			    logger.debug(`finished with ${characteristic.name}`)
 			} // end if readable
 
-			if (characteristic.properties.includes('notify')) {
+			// for serial ports, subscribe to data from the device
+			// (TODO: sending)
+			if (argv.serial) {
+			    if (characteristic.uuid===uuid_serial_rx) {
+				logger.info("Relaying stdin to Nordic UART");
+				chrc_serial_rx = characteristic;
+				process.stdin.on('data', chunk => {
+				    logger.debug("send chunk to uart", chunk.toString('utf8'));
+				    chrc_serial_rx.write(chunk, false,err=>{
+					if (err) {
+					    logger.error('Write error', err)
+					}
+					else {
+					    logger.debug('Wrote to UART RX')
+					}
+				    });
+				});
+			    }
+			    else if ((characteristic.uuid===uuid_serial_tx)) {
+				logger.info("Subscribing to Nordic UART TX");
+				characteristic.subscribe(error=>{
+				    if (error) {
+					logger.error('subscribe error ', error)
+					return
+				    }
+				})
+			    }
+			}
+			else if (characteristic.properties.includes('notify')) {
 			    if (argv.notify.find(
 				f=> (f===characteristic.uuid) ||
 				    (f===characteristic.name))) {
@@ -209,7 +257,7 @@ function pollDevice(device) {
 					return
 				    }
 				    if (data) {
-					logger.info('notify data',data)
+					logger.info(`notify data ${characteristic.name}`,data)
 				    }
 				})
 			    }
@@ -232,3 +280,10 @@ function pollDevice(device) {
 	if (err) {console.error('Connect failed', err)}
     })
 } // end function pollFlowerscare
+
+if (argv.serial) {
+    process.stdin.on('data', chunk => {
+	logger.debug("TODO: send chunk to uart", chunk);
+    });
+}
+
